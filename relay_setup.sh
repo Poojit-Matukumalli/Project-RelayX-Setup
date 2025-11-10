@@ -3,8 +3,6 @@
 set -euo pipefail
 
 # Configuring directories / link of repo
-
-REPO_URL=""
 RELAY_SCRIPT="Server_RelayX"
 SERVICE_NAME="RelayX"
 WORKDIR="$HOME"
@@ -24,7 +22,7 @@ if [[ "$MODE" == "1" ]]; then
     sudo apt install -y software-properties-common
     clear && sudo add-apt-repository -y ppa:deadsnakes/ppa
     clear && sudo apt -y upgrade
-    clear && sudo apt-get install -y tor git python3 python3-pip ufw nano 
+    clear && sudo apt-get install -y tor python3 python3-pip ufw nano 
 
     echo "Installing Python packages..."
     pip3 install --upgrade pip
@@ -34,7 +32,6 @@ elif [[ "$MODE" == "2" ]]; then
     echo "--- Manual mode selected ---"
     echo "Please ensure the following are installed manually:"
     echo "1) Tor"
-    echo "2) Git"
     echo "3) Python3 + pip3"
     echo "4) aiohttp-socks (pip3 install aiohttp-socks)"
     read -rp "Press Enter when ready..."
