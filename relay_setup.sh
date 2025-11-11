@@ -34,7 +34,8 @@ pip3 install --upgrade pip
 sudo apt install python3-aiohttp-socks
 
 # Python RelayX daemon
-
+TargetDir ="/home/$profile_hostname"
+sudo mv /home/Project-RelayX-Setup "$TargetDir"
 SERVICE_PATH="/etc/systemd/system/$SERVICE_NAME.service"
 echo "Creating systemd service for relay..."
 sudo tee "$SERVICE_PATH" > /dev/null <<EOF
@@ -46,7 +47,7 @@ After=network.target
 Type=simple
 User=$profile_hostname
 WorkingDirectory=$WORKDIR
-ExecStart=/usr/bin/python3 $WORKDIR/$RELAY_SCRIPT
+ExecStart=/usr/bin/python3 $WORKDIR/Project-RelayX-Setup/$RELAY_SCRIPT
 Restart=on-failure
 RestartSec=5
 
