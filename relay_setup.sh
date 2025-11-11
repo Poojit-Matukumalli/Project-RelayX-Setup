@@ -3,7 +3,7 @@
 
 set -euo pipefail
 
-# Configuring directories / link of repo
+# Configuring directories
 RELAY_SCRIPT="Server_RelayX"
 SERVICE_NAME="RelayX"
 WORKDIR="$HOME"
@@ -27,7 +27,7 @@ if [[ "$MODE" == "1" ]]; then
 
     echo "Installing Python packages..."
     pip3 install --upgrade pip
-    pip3 install aiohttp-socks
+    sudo apt install python3-aiohttp-socks
 
 elif [[ "$MODE" == "2" ]]; then
     echo "--- Manual mode selected ---"
@@ -47,14 +47,14 @@ SERVICE_PATH="/etc/systemd/system/$SERVICE_NAME.service"
 echo "Creating systemd service for relay..."
 sudo tee "$SERVICE_PATH" > /dev/null <<EOF
 [Unit]
-Description=Project RelayX
+Description=RelayX Daemon Service
 After=network.target
 
 [Service]
 Type=simple
 User=$USER
 WorkingDirectory=$WORKDIR
-ExecStart=$(which python3) $WORKDIR/$RELAY_SCRIPT
+ExecStart=/usr/bin/python3 $WORKDIR/$RELAY_SCRIPT
 Restart=on-failure
 RestartSec=5
 
@@ -67,21 +67,21 @@ sudo systemctl enable "$SERVICE_NAME"
 sudo systemctl start "$SERVICE_NAME"
 sudo systemctl status "$SERVICE_NAME" --no-pager
 
-# --- Setup Tor ---
+# Tor setup
 echo "Configuring Tor..."
-# Ensure Tor is enabled and running
+# tor check
 sudo systemctl enable tor
 sudo systemctl start tor
 sudo systemctl status tor --no-pager
 
-# Optional firewall setup
+# firewall setup
 if command -v ufw >/dev/null 2>&1; then
     echo "Allowing Tor ports through ufw..."
     sudo ufw allow 9050/tcp
     sudo ufw reload || true
 fi
 
-# Retrieve hostname
+# fetch hostname
 HOSTNAME_FILE="$HOME/.tor/hostname"
 if [[ ! -f "$HOSTNAME_FILE" ]]; then
     # Default Tor hostname location
