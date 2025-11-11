@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # Project RelayX bash file for setup 
 
 set -euo pipefail
