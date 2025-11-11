@@ -4,42 +4,34 @@
 set -euo pipefail
 
 # Configuring directories
-RELAY_SCRIPT="Server_RelayX"
+RELAY_SCRIPT="Server_RelayX.py"
 SERVICE_NAME="RelayX"
 WORKDIR="$HOME"
 TORRC_PATH="/etc/tor/torrc"
 
-echo "Welcome to Project RelayX Setup"
-echo "Choose installation mode:"
-echo "1) Auto install (recommended for non-technical users)"
-echo "2) Manual install (sysadmins, advanced users)"
-read -rp "Enter 1 or 2: " MODE
+echo "                                                 Welcome to RelayX Setup" && echo
+echo "This script is for Auto installation"
+echo " For manual installation, terminate this script and do it manually. Instructions are in GitHub RELAYSETUP.md" && echo && echo
+echo "For security, we recommend running in a non sudo profile (no root access)"
+echo && echo "               Non sudo profile setup"
+read -p "Hostname for the non sudo profile (remember this): " profile_hostname
+read -s -p "Password for $profile_hostname: " profile_password
+echo 
+profile_hostname=$(echo "$profile_hostname" | tr -cd '[:alnum:]_-')
+sudo adduser --gecos "" --disabled-password "$profile_hostname"
+echo "$profile_hostname:$profile_password" | sudo chpasswd
+echo "Non Sudo profile with name $profile_hostname has been created" && echo
 
-if [[ "$MODE" == "1" ]]; then
-    echo "Auto mode selected"
+echo "Updating system and installing dependencies..."
+sudo apt-get update
+sudo apt install -y software-properties-common
+clear && sudo add-apt-repository -y ppa:deadsnakes/ppa
+clear && sudo apt -y upgrade
+clear && sudo apt-get install -y tor python3 python3-pip ufw nano 
 
-    echo "Updating system and installing dependencies..."
-    sudo apt-get update
-    sudo apt install -y software-properties-common
-    clear && sudo add-apt-repository -y ppa:deadsnakes/ppa
-    clear && sudo apt -y upgrade
-    clear && sudo apt-get install -y tor python3 python3-pip ufw nano 
-
-    echo "Installing Python packages..."
-    pip3 install --upgrade pip
-    sudo apt install python3-aiohttp-socks
-
-elif [[ "$MODE" == "2" ]]; then
-    echo "--- Manual mode selected ---"
-    echo "Please ensure the following are installed manually:"
-    echo "1) Tor"
-    echo "3) Python3 + pip3"
-    echo "4) aiohttp-socks (pip3 install aiohttp-socks)"
-    read -rp "Press Enter when ready..."
-else
-    echo "Invalid selection. Exiting."
-    exit 1
-fi
+echo "Installing Python packages..."
+pip3 install --upgrade pip
+sudo apt install python3-aiohttp-socks
 
 # Python RelayX daemon
 
@@ -52,7 +44,7 @@ After=network.target
 
 [Service]
 Type=simple
-User=$USER
+User=$profile_hostname
 WorkingDirectory=$WORKDIR
 ExecStart=/usr/bin/python3 $WORKDIR/$RELAY_SCRIPT
 Restart=on-failure
