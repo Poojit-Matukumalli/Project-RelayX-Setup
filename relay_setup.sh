@@ -4,10 +4,10 @@
 set -euo pipefail
 
 # Configuring directories
-RELAY_SCRIPT="Server_RelayX.py"
-SERVICE_NAME="RelayX"
-WORKDIR="$HOME"
-TORRC_PATH="/etc/tor/torrc"
+RELAY_SCRIPT=Server_RelayX.py
+SERVICE_NAME=RelayX
+WORKDIR=$HOME
+TORRC_PATH=/etc/tor/torrc
 
 echo "                                                 Welcome to RelayX Setup" && echo
 echo "This script is for Auto installation"
@@ -17,8 +17,8 @@ echo && echo "               Non sudo profile setup"
 read -p "Hostname for the non sudo profile (remember this): " profile_hostname
 read -s -p "Password for $profile_hostname: " profile_password
 echo 
-profile_hostname=$(echo "$profile_hostname" | tr -cd '[:alnum:]_-')
-sudo adduser --gecos "" --disabled-password "$profile_hostname"
+profile_hostname=$(echo $profile_hostname | tr -cd '[:alnum:]_-')
+sudo adduser --gecos "" --disabled-password $profile_hostname
 echo "$profile_hostname:$profile_password" | sudo chpasswd
 echo "Non Sudo profile with name $profile_hostname has been created" && echo
 
@@ -27,16 +27,17 @@ sudo apt-get update
 sudo apt install -y software-properties-common
 clear && sudo add-apt-repository -y ppa:deadsnakes/ppa
 clear && sudo apt -y upgrade
-clear && sudo apt-get install -y tor python3 python3-pip ufw nano 
+clear && sudo apt-get install -y tor python3.13 python3-pip ufw nano 
 
 echo "Installing Python packages..."
 pip3 install --upgrade pip
 sudo apt install python3-aiohttp-socks
+sudo apt install python3-aiofiles
 
 # Python RelayX daemon
-TargetDir ="/home/$profile_hostname"
+TargetDir=/home/$profile_hostname
 sudo mv /home/Project-RelayX-Setup "$TargetDir"
-SERVICE_PATH="/etc/systemd/system/$SERVICE_NAME.service"
+SERVICE_PATH=/etc/systemd/system/$SERVICE_NAME.service
 echo "Creating systemd service for relay..."
 sudo tee "$SERVICE_PATH" > /dev/null <<EOF
 [Unit]
@@ -46,8 +47,8 @@ After=network.target
 [Service]
 Type=simple
 User=$profile_hostname
-WorkingDirectory=$WORKDIR
-ExecStart=/usr/bin/python3 $WORKDIR/Project-RelayX-Setup/$RELAY_SCRIPT
+WorkingDirectory=/home/$profile_hostname
+ExecStart=/usr/bin/python3.13 /home/Project-RelayX-Setup/$RELAY_SCRIPT
 Restart=on-failure
 RestartSec=5
 
