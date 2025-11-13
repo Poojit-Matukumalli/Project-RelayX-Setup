@@ -30,7 +30,6 @@ clear && sudo apt -y upgrade
 clear && sudo apt-get install -y tor python3.13 python3-pip ufw nano 
 
 echo "Installing Python packages..."
-pip3 install --upgrade pip
 sudo apt install python3-aiohttp-socks
 sudo apt install python3-aiofiles
 
