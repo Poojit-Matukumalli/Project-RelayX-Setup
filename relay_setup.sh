@@ -47,7 +47,7 @@ After=network.target
 Type=simple
 User=$profile_hostname
 WorkingDirectory=/home/$profile_hostname
-ExecStart=/usr/bin/python3.13 /home/Project-RelayX-Setup/$RELAY_SCRIPT
+ExecStart=/usr/bin/python3.13 ~/Project-RelayX-Setup/$RELAY_SCRIPT
 Restart=on-failure
 RestartSec=5
 

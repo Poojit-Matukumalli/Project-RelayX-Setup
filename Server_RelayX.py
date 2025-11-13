@@ -19,7 +19,7 @@ import aiofiles
 # --- configuration ---
 LISTEN_HOST = "127.0.0.1"
 LISTEN_PORT = 5050
-LOG_PATH = r"~/relay_log.txt"
+LOG_PATH = r"relay_log.txt"
 MAX_ROUTE_LEN = 8
 SAFE_MODE = False
 ALLOWED_HOSTS = ["127.0.0.1", "localhost", ".onion"]
