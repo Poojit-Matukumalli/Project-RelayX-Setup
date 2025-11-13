@@ -35,7 +35,7 @@ sudo apt install python3-aiofiles
 
 # Python RelayX daemon
 TargetDir=/home/$profile_hostname
-sudo mv /home/Project-RelayX-Setup "$TargetDir"
+sudo mv ~/Project-RelayX-Setup "$TargetDir"
 SERVICE_PATH=/etc/systemd/system/$SERVICE_NAME.service
 echo "Creating systemd service for relay..."
 sudo tee "$SERVICE_PATH" > /dev/null <<EOF
