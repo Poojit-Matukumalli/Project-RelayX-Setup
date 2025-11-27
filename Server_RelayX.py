@@ -10,7 +10,7 @@ Envelope format (JSON):
 }
 """
 import aiohttp_socks as asocks
-import asyncio, os, json,
+import asyncio, os, json
 import time, argparse, aiofiles 
 
 # --- configuration ---
@@ -27,6 +27,10 @@ BACKUP_COUNT = 3
 
 async def rotate_logs_if_needed():
     try:
+        oldest = f"{LOG_PATH}.{BACKUP_COUNT}"
+        if os.path.exists(oldest):
+            os.remove(oldest)
+
         if os.path.exists(LOG_PATH) and os.path.getsize(LOG_PATH) > MAX_LOG_SIZE:
             for i in range(BACKUP_COUNT - 1, 0, -1):
                 older = f"{LOG_PATH}.{i}"
@@ -36,7 +40,7 @@ async def rotate_logs_if_needed():
             os.rename(LOG_PATH, f"{LOG_PATH}.1")
     except Exception:
         print("[LOG ROTATE ERROR]")
-
+      
 def now_iso():
     return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
 
