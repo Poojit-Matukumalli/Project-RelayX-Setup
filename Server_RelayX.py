@@ -52,21 +52,15 @@ class RelayXAsync:
     async def start(self):
         server = await asyncio.start_server(self._handle_conn, self.host, self.port)
         addr = server.sockets[0].getsockname()
-        print(f"[CARBON RELAY ASYNC] Listening on {addr}  (safe_mode={self.safe_mode})")
-        await log_event("Hello")
-        await log_event(f"START {addr}")
 
         async with server:
             await server.serve_forever()
 
     async def _handle_conn(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
-        peer = writer.get_extra_info("peername")
-        await log_event(f"CONN {peer}")
-
         try:
             data = await asyncio.wait_for(reader.read(65536), timeout=5.0)
         except asyncio.TimeoutError:
-            await log_event(f"TIMEOUT {peer}")
+            await log_event(f"TIMEOUT")
             writer.close()
             await writer.wait_closed()
             return
@@ -79,7 +73,7 @@ class RelayXAsync:
         try:
             envelope = json.loads(data.decode())
         except Exception as e:
-            await log_event(f"BAD_JSON {peer} {e}")
+            await log_event("BAD_JSON")
             writer.close()
             await writer.wait_closed()
             return
@@ -90,34 +84,34 @@ class RelayXAsync:
         to_id = envelope.get("to", "unknown")
 
         if not isinstance(route, list):
-            await log_event(f"BAD_ROUTE_FORMAT from={from_id}")
+            await log_event(f"BAD_ROUTE_FORMAT")
             return
 
         if len(route) > MAX_ROUTE_LEN:
-            await log_event(f"ROUTE_TOO_LONG from={from_id}")
+            await log_event(f"ROUTE_TOO_LONG")
             return
 
         if len(route) == 0:
-            await log_event(f"FINAL_DROP from={from_id} to={to_id}")
+            await log_event(f"FINAL_DROP")
             return
 
         next_hop = route.pop(0)
         onion_route, port = parse_hostport(next_hop)
         if onion_route is None or port is None:
-            await log_event(f"INVALID_HOP {next_hop}")
+            await log_event(f"INVALID_HOP")
             return
 
         if self.safe_mode and not onion_route.endswith(".onion"):
-            await log_event(f"REJECT_FORWARD to {onion_route}:{port} (not .onion). (not allowed in safe mode)")
+            await log_event(f"REJECT_FORWARD to (not .onion). (not allowed in safe mode)")
             return
 
         envelope["route"] = route
 
         ok = await self._forward_to_next(onion_route, port, envelope, from_id, to_id)
         if ok:
-            await log_event(f"FORWARDED from={from_id} next={onion_route}:{port} remaining={len(route)}")
+            await log_event(f"FORWARDED")
         else: 
-            await log_event(f"FORWARD_FAILED from={from_id} next={onion_route}:{port}")
+            await log_event(f"FORWARD_FAILED")
 
     async def _forward_to_next(self, onion_route, port, envelope, from_id, to_id):
         try:
@@ -132,13 +126,13 @@ class RelayXAsync:
             await writer.wait_closed()
             return True
         except Exception as e:
-            await log_event(f"CONNECT_FAIL, next={onion_route}:{port } err={e}")
+            await log_event(f"CONNECT_FAIL")
             return False
 
 
 # --- stuff showing up in the CLI ---
 def parse_args():
-    p = argparse.ArgumentParser(description="Carbon Relay Async - multi-hop forwarder")
+    p = argparse.ArgumentParser(description="Relay Async - multi-hop forwarder")
     p.add_argument("--host", default=LISTEN_HOST)
     p.add_argument("--port", type=int, default=LISTEN_PORT)
     p.add_argument("--safe", action="store_true")

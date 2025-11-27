@@ -35,7 +35,7 @@ sudo apt install python3-aiofiles
 
 # Python RelayX daemon
 TargetDir=/home/$profile_hostname
-sudo mv ~/Project-RelayX-Setup "$TargetDir"
+sudo cp ~/Project-RelayX-Setup "$TargetDir"
 SERVICE_PATH=/etc/systemd/system/$SERVICE_NAME.service
 echo "Creating systemd service for relay..."
 sudo tee "$SERVICE_PATH" > /dev/null <<EOF
@@ -47,7 +47,7 @@ After=network.target
 Type=simple
 User=$profile_hostname
 WorkingDirectory=/home/$profile_hostname
-ExecStart=/usr/bin/python3.13 ~/Project-RelayX-Setup/$RELAY_SCRIPT
+ExecStart=/usr/bin/python3.13 /home/$profile_hostname/Project-RelayX-Setup/$RELAY_SCRIPT
 Restart=on-failure
 RestartSec=5
 
@@ -74,20 +74,9 @@ if command -v ufw >/dev/null 2>&1; then
     sudo ufw reload || true
 fi
 
-# fetch hostname
-HOSTNAME_FILE="$HOME/.tor/hostname"
-if [[ ! -f "$HOSTNAME_FILE" ]]; then
-    # Default Tor hostname location
-    HOSTNAME_FILE="/var/lib/tor/hostname"
-fi
-
-echo "Fetching relay hostname..."
-if [[ -f "$HOSTNAME_FILE" ]]; then
-    echo "Your relay hostname is:"
-    sudo cat "$HOSTNAME_FILE"
-else
-    echo "Could not find Tor hostname file. Ensure Tor is running."
-fi
-
-echo "Project RelayX setup complete."
-echo "Add the above hostname via a PR to the relay_list in the main repo"
+echo "------------------------------------------------------------------------------------------------------------------------" && echo
+echo "                                      -Project RelayX setup complete.-" && echo
+echo "The next steps are clearly documented in AutoSetup.md in GitHub. Use a device with a GUI (Has images)" && echo
+echo "                              --------------------------------------------------"
+echo "                              | Check The next step in AutoSetup.md on GitHub. |"
+echo "                              --------------------------------------------------" && echo
