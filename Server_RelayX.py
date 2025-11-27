@@ -10,11 +10,8 @@ Envelope format (JSON):
 }
 """
 import aiohttp_socks as asocks
-import asyncio
-import json
-import time
-import argparse
-import aiofiles
+import asyncio, os, json,
+import time, argparse, aiofiles 
 
 # --- configuration ---
 LISTEN_HOST = "127.0.0.1"
@@ -23,17 +20,25 @@ LOG_PATH = r"relay_log.txt"
 MAX_ROUTE_LEN = 8
 SAFE_MODE = False
 ALLOWED_HOSTS = ["127.0.0.1", "localhost", ".onion"]
+MAX_LOG_SIZE = 2_000_000
+BACKUP_COUNT = 3
 
 # --- helper functions ---
+
+async def rotate_logs_if_needed():
+    try:
+        if os.path.exists(LOG_PATH) and os.path.getsize(LOG_PATH) > MAX_LOG_SIZE:
+            for i in range(BACKUP_COUNT - 1, 0, -1):
+                older = f"{LOG_PATH}.{i}"
+                newer = f"{LOG_PATH}.{i+1}"
+                if os.path.exists(older):
+                    os.rename(older, newer)
+            os.rename(LOG_PATH, f"{LOG_PATH}.1")
+    except Exception:
+        print("[LOG ROTATE ERROR]")
+
 def now_iso():
     return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
-
-async def log_event(line: str):
-    try:
-        async with aiofiles.open(LOG_PATH, "a", encoding="utf-8") as f:
-            await f.write(f"{now_iso()} {line}\n")
-    except Exception:
-        print(f"[LOG ERROR]")
 
 def parse_hostport(s: str):
     try:
@@ -42,6 +47,14 @@ def parse_hostport(s: str):
     except Exception:
         return None, None
 
+async def log_event(line: str):
+    try:
+        await rotate_logs_if_needed()
+        async with aiofiles.open(LOG_PATH, "a", encoding="utf-8") as f:
+            await f.write(f"{now_iso()} {line}\n")
+    except:
+        print("[LOG ERROR]")
+      
 # --- async Relay Core ---
 class RelayXAsync:
     def __init__(self, host=LISTEN_HOST, port=LISTEN_PORT, safe_mode=SAFE_MODE):
