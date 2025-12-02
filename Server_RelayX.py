@@ -69,7 +69,6 @@ class RelayXAsync:
     async def start(self):
         server = await asyncio.start_server(self._handle_conn, self.host, self.port)
         addr = server.sockets[0].getsockname()
-
         async with server:
             await server.serve_forever()
 
