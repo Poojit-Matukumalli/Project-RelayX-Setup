@@ -72,6 +72,23 @@ class RelayXAsync:
         async with server:
             await server.serve_forever()
 
+    async def _forward_to_next(self, onion_route, port, envelope):
+        try:
+            reader, writer = await asocks.open_connection(proxy_host="127.0.0.1",
+                proxy_port=9050,
+                host=onion_route,
+                port=port
+                )  # asocks is the name of aiohttp-socks          
+            writer.write(json.dumps(envelope).encode())
+            await writer.drain()
+            writer.close()
+            await writer.wait_closed()
+            return True
+        except Exception as e:
+            await log_event(f"CONNECT_FAIL")
+            return False
+
+
     async def _handle_conn(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
         try:
             data = await asyncio.wait_for(reader.read(65536), timeout=5.0)
@@ -129,21 +146,6 @@ class RelayXAsync:
         else: 
             await log_event(f"FORWARD_FAILED")
 
-    async def _forward_to_next(self, onion_route, port, envelope):
-        try:
-            reader, writer = await asocks.open_connection(proxy_host="127.0.0.1",
-                proxy_port=9050,
-                host=onion_route,
-                port=port
-                )  # asocks is the name of aiohttp-socks          
-            writer.write(json.dumps(envelope).encode())
-            await writer.drain()
-            writer.close()
-            await writer.wait_closed()
-            return True
-        except Exception as e:
-            await log_event(f"CONNECT_FAIL")
-            return False
 
 
 # --- stuff showing up in the CLI ---
