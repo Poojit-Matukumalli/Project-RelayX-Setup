@@ -123,13 +123,13 @@ class RelayXAsync:
 
         envelope["route"] = route
 
-        ok = await self._forward_to_next(onion_route, port, envelope, from_id, to_id)
+        ok = await self._forward_to_next(onion_route, port, envelope)
         if ok:
             await log_event(f"FORWARDED")
         else: 
             await log_event(f"FORWARD_FAILED")
 
-    async def _forward_to_next(self, onion_route, port, envelope, from_id, to_id):
+    async def _forward_to_next(self, onion_route, port, envelope):
         try:
             reader, writer = await asocks.open_connection(proxy_host="127.0.0.1",
                 proxy_port=9050,
