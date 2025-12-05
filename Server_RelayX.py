@@ -127,7 +127,7 @@ class RelayXAsync:
         if len(route) == 0:
             await log_event(f"FINAL_DROP")
             return
-
+        next_hop = next_hop.strip().replace("\n", "").replace("\r", "")
         next_hop = route.pop(0)
         onion_route, port = parse_hostport(next_hop)
         if onion_route is None or port is None:
