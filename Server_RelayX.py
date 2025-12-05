@@ -1,17 +1,6 @@
-"""
-Envelope format (JSON):
-{
-  "route": [".onion:port", ".onion:port", ...],
-  "payload": "<encrypted or base64 string>",
-  "from": "<sender_pubid>",
-  "to": "<dest_pubid>",
-  "stap": "<ISO timestamp>",
-  "meta": { ... }   # optional
-}
-"""
 import aiohttp_socks as asocks
 import asyncio, os, json
-import time, argparse, aiofiles 
+import time, argparse, aiofiles
 
 # --- configuration ---
 LISTEN_HOST = "127.0.0.1"
@@ -40,7 +29,7 @@ async def rotate_logs_if_needed():
             os.rename(LOG_PATH, f"{LOG_PATH}.1")
     except Exception:
         print("[LOG ROTATE ERROR]")
-      
+
 def now_iso():
     return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
 
@@ -58,7 +47,7 @@ async def log_event(line: str):
             await f.write(f"{now_iso()} {line}\n")
     except:
         print("[LOG ERROR]")
-      
+
 # --- async Relay Core ---
 class RelayXAsync:
     def __init__(self, host=LISTEN_HOST, port=LISTEN_PORT, safe_mode=SAFE_MODE):
@@ -79,7 +68,7 @@ class RelayXAsync:
                 proxy_port=9050,
                 host=onion_route,
                 port=port
-                )  # asocks is the name of aiohttp-socks          
+                )  # asocks is the name of aiohttp-socks
             writer.write((json.dumps(envelope) + "\n").encode())
             await writer.drain()
             await asyncio.sleep(0.05)
@@ -87,7 +76,7 @@ class RelayXAsync:
             await writer.wait_closed()
             return True
         except Exception as e:
-            await log_event(f"CONNECT_FAIL {type(e).__name__} : {e}")
+            await log_event("CONNECT_FAIL")
             return False
 
 
@@ -95,7 +84,7 @@ class RelayXAsync:
         try:
             data = await asyncio.wait_for(reader.read(65536), timeout=5.0)
         except asyncio.TimeoutError:
-            await log_event(f"TIMEOUT")
+            await log_event("TIMEOUT")
             writer.close()
             await writer.wait_closed()
             return
@@ -119,35 +108,35 @@ class RelayXAsync:
         to_id = envelope.get("to", "unknown")
 
         if not isinstance(route, list):
-            await log_event(f"BAD_ROUTE_FORMAT")
+            await log_event("BAD_ROUTE_FORMAT")
             return
 
         if len(route) > MAX_ROUTE_LEN:
-            await log_event(f"ROUTE_TOO_LONG")
+            await log_event("ROUTE_TOO_LONG")
             return
 
         if len(route) == 0:
-            await log_event(f"FINAL_DROP")
+            await log_event("FINAL_DROP")
             return
-        next_hop = next_hop.strip().replace("\n", "").replace("\r", "")
+
         next_hop = route.pop(0)
         next_hop = next_hop.strip().replace("\n", "").replace("\r", "")
         onion_route, port = parse_hostport(next_hop)
         if onion_route is None or port is None:
-            await log_event(f"INVALID_HOP")
+            await log_event("INVALID_HOP")
             return
 
         if self.safe_mode and not onion_route.endswith(".onion"):
-            await log_event(f"REJECT_FORWARD to (not .onion). (not allowed in safe mode)")
+            await log_event("REJECT_FORWARD (not allowed in safe mode)")
             return
 
         envelope["route"] = route
 
         ok = await self._forward_to_next(onion_route, port, envelope)
         if ok:
-            await log_event(f"FORWARDED")
-        else: 
-            await log_event(f"FORWARD_FAILED")
+            await log_event("FORWARDED")
+        else:
+            await log_event("FORWARD_FAILED")
 
 
 
