@@ -82,7 +82,8 @@ class RelayXAsync:
 
     async def _handle_conn(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
         try:
-            data = await asyncio.wait_for(reader.read(65536), timeout=5.0)
+            data = await asyncio.wait_for(reader.readline(), timeout=5.0)
+                
         except asyncio.TimeoutError:
             await log_event("TIMEOUT")
             writer.close()
