@@ -1,5 +1,5 @@
 import aiohttp_socks as asocks
-import asyncio, os, json
+import asyncio, os, struct, msgpack
 import time, argparse, aiofiles
 
 # --- configuration ---
@@ -61,17 +61,15 @@ class RelayXAsync:
         async with server:
             await server.serve_forever()
 
-    async def _forward_to_next(self, onion_route, port, envelope):
+    async def _forward_to_next(self, onion_route, port, framed_bytes):
         try:
-            await log_event(onion_route)
             reader, writer = await asocks.open_connection(proxy_host="127.0.0.1",
                 proxy_port=9050,
                 host=onion_route,
                 port=port
                 )  # asocks is the name of aiohttp-socks
-            writer.write((json.dumps(envelope) + "\n").encode())
+            writer.write(framed_bytes)
             await writer.drain()
-            await asyncio.sleep(0.05)
             writer.close()
             await writer.wait_closed()
             return True
@@ -82,7 +80,9 @@ class RelayXAsync:
 
     async def _handle_conn(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
         try:
-            data = await asyncio.wait_for(reader.readline(), timeout=5.0)
+            raw_len = asyncio.wait_for(await reader.readexactly(4), timeout=10)
+            msg_len = struct.unpack("!I", raw_len)[0]
+            payload = asyncio.wait_for(await reader.readexactly(msg_len), timeout=10)
                 
         except asyncio.TimeoutError:
             await log_event("TIMEOUT")
@@ -90,38 +90,27 @@ class RelayXAsync:
             await writer.wait_closed()
             return
 
-        if not data:
+        if not payload:
             writer.close()
             await writer.wait_closed()
             return
 
         try:
-            envelope = json.loads(data.decode())
+            envelope = msgpack.unpackb(payload, raw=False)
         except Exception as e:
-            await log_event("BAD_JSON")
+            await log_event(f"[MSG UNPACK ERROR]\n{e}")
             writer.close()
             await writer.wait_closed()
             return
 
         route = envelope.get("route", [])
-        payload = envelope.get("payload")
-        from_id = envelope.get("from", "unknown")
-        to_id = envelope.get("to", "unknown")
-
-        if not isinstance(route, list):
-            await log_event("BAD_ROUTE_FORMAT")
+        if not route:
+            await log_event("FINAL DROP")
+            writer.close()
+            await writer.wait_closed()
             return
 
-        if len(route) > MAX_ROUTE_LEN:
-            await log_event("ROUTE_TOO_LONG")
-            return
-
-        if len(route) == 0:
-            await log_event("FINAL_DROP")
-            return
-
-        next_hop = route.pop(0)
-        next_hop = next_hop.strip().replace("\n", "").replace("\r", "")
+        next_hop = route.pop(0).strip().replace("\n", "").replace("\r", "")
         onion_route, port = parse_hostport(next_hop)
         if onion_route is None or port is None:
             await log_event("INVALID_HOP")
@@ -133,7 +122,9 @@ class RelayXAsync:
 
         envelope["route"] = route
 
-        ok = await self._forward_to_next(onion_route, port, envelope)
+        packed = msgpack.packb(envelope, use_bin_type=True)
+        framed = struct.pack("!I", len(packed)) + packed
+        ok = await self._forward_to_next(onion_route, port, framed)
         if ok:
             await log_event("FORWARDED")
         else:
