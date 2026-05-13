@@ -1,6 +1,8 @@
 # Server side relay setup --
 Before continuing, this requires some technical skill and is not for regular users.
 
+Important: the auto install bash script is outdated and hasn't been updated for a while.
+
 1. You must be able to install Ubuntu server LTS as this is what the server relay requires.
 2. Be able to use sudo, add profiles, be somewhat comfortable with working without a GUI. 
 3. There are no YouTube tutorials on this. (As of now, we don't have one). The RELAYSETUP.md is to be used as a Reference. Contact Poojit-Matukumalli for any queries related to this topic.
